@@ -2,6 +2,8 @@
 #include <time.h>
 #include <GL/glut.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define TIMER_ID 0
 #define TIMER_INTERVAL 20
@@ -11,11 +13,10 @@ static int window_width, window_height;
 static float v_x, v_y;          /* Komponente vektora brzine kretanja
                                  * kugle. */
 static float e = sqrt(1*1 - 0.7*0.7);
-static float x_curr, y_curr;    /* Tekuce koordinate centra kugle. */
+static float x_curr, y_curr, x_start, y_start, x_end, y_end, x_coll, y_coll;    /* Tekuce koordinate centra kugle,pocetna i zavrsna pozicija. */
 static int animation_ongoing;   /* Fleg koji odredjuje da li je
                                  * animacija u toku. */
-static float x_cen, y_cen;      /* koordinate leve zize(centra pocetne kugle) */
-
+static float k = -1; /* dubina druge zize */
 /* Deklaracije callback funkcija. */
 static void on_keyboard(unsigned char key, int x, int y);
 static void on_timer(int value);
@@ -42,15 +43,19 @@ int main(int argc, char **argv)
 
     /* Inicijalizuju se globalne promjenljive. */
    
-   e = sqrt(1*1 - 0.7*0.7);
-   x_curr=-sqrt(1*1 - 0.7*0.7);
-   y_curr=0; 
+    e = sqrt(1*1 - 0.7*0.7);
+    x_curr = -e;
+    y_curr = 0; 
    
-   x_cen=-sqrt(1*1 - 0.7*0.7);
-   y_cen=0;
+    x_start = -e;
+    y_start = 0;
+   
+    x_end = e;
+    y_end = 0;
 
-    v_x = 0.01;
-    v_y = 0.01;
+   
+    v_x = 0.06;
+    v_y = 0.06;
 
     /* Na pocetku je animacija neaktivna */
     animation_ongoing = 0;
@@ -91,11 +96,18 @@ static void on_keyboard(unsigned char key, int x, int y)
         /*Restartuje se apk(vraca se na pocetak)*/
     case 'r':
     case 'R':
-      
-         x_curr=x_cen-0.01;
-         y_curr=y_cen-0.01;
+         x_curr=x_start-0.01;
+         y_curr=y_start-0.01;
+         v_x = 0.01;
+         v_y = 0.01;
+         k = 0;
            animation_ongoing = 0;
          break;
+         
+    case 'i':
+    case 'I':
+        scanf("%f %f", &v_x, &v_y);
+        break;
     }
 }
 
@@ -112,25 +124,60 @@ static void on_timer(int value)
      */
     if (value != TIMER_ID)
         return;
-
+    
+    /* proverava se da li je kugla dosla do rupe */
+    if(x_coll < e && y_coll > 0 && x_curr+0.02 > e && y_curr-0.02 < 0) {
+        animation_ongoing = 0;
+        k = 0.2;
+    }
+    if(x_coll < e && y_coll < 0 && x_curr+0.02 > e && y_curr+0.02 > 0){
+        animation_ongoing = 0;
+        k = 0.2;
+    }
+    if(x_coll > e && y_coll > 0 && x_curr-0.02 < e && y_curr-0.02 < 0){
+        animation_ongoing = 0;
+        k = 0.2;
+    }
+    if(x_coll > e && y_coll < 0 && x_curr-0.02 < e && y_curr+0.02 > 0){
+        animation_ongoing = 0;
+        k = 0.2;
+    }
+    if(x_coll < -e && y_coll == 0 && x_curr+0.02 > e){
+        animation_ongoing = 0;
+        k = 0.2;
+    }
+    
+    
+    
     /* Azuriraju se koordinate centra kruga. */
-    x_curr += v_x;
-    if (y_curr+0.06 > sqrt(0.49 - 0.49*x_curr*x_curr)) {
-        v_x *= -1;
-    }
-
     y_curr += v_y;
-    if ( x_curr+0.06 > sqrt( (0.49 - y_curr*y_curr) / 0.49)) {
-        v_y *= -1;
-    }
+    double y_compare = sqrt(0.49 - 0.49*x_curr*x_curr);
+    if (y_curr+0.05 >= y_compare || y_curr-0.05 <= -y_compare) {
+        x_coll = x_curr;
+        y_coll = y_curr;
+        v_x = (x_end - x_curr)/70 ;
+        v_y = (y_end - y_curr)/70 ;  
+        }
+
+    x_curr += v_x;
+    double x_compare = sqrt((0.49 - y_curr*y_curr) / 0.49);
+    if ( x_curr+0.05 >= x_compare || x_curr-0.05 <= -x_compare) {
+        x_coll = x_curr;
+        y_coll = y_curr;
+        v_x = (x_end - x_curr)/70 ;
+        v_y = (y_end - y_curr)/70 ;  
+        } 
+    
 
     /* Forsira se ponovno iscrtavanje prozora. */
     glutPostRedisplay();
+    
 
     /* Po potrebi se ponovo postavlja tajmer. */
     if (animation_ongoing) {
         glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_ID);
     }
+    
 }
 
 static void on_display(void)
@@ -155,26 +202,26 @@ static void on_display(void)
         draw_elipse(1,0.7);
     glPopMatrix();
       
-    //Pocetna pozicija(prva ziza)
+    /*Pocetna pozicija(prva ziza)*/
     glPushMatrix();
         glTranslatef(-e,0,0);
         glColor3f(1,1,1);
-        draw_circle(0.06,-0.1);
+        draw_circle(0.01,0);
     glPopMatrix();
     
-    //Zavrsna pozicija(druga ziza)
+    /*Zavrsna pozicija(druga ziza)*/
     glPushMatrix();
         glTranslatef(e,0,0);
         glColor3f(0,0,0);
-        draw_circle(0.06,-0.3);
+        draw_circle(0.06,0);
     glPopMatrix();
     
-    //Pocetna pozicija kugle(prva ziza)
+    /*Pocetna pozicija kugle(prva ziza)*/
     glPushMatrix();
-    glTranslatef(-e,0,0);
-    glTranslatef(x_curr-x_cen,y_curr-y_cen,0);
-        glColor3f(0, 0, 1);
-        draw_circle(0.06,-0.2);
+    glTranslatef(-e,0,k);
+    glTranslatef(x_curr-x_start,y_curr-y_start,0);
+        glColor3f(1, 1, 1);
+    glutWireSphere(0.05, 100, 100);
     glPopMatrix();
     /* Nova slika se salje na ekran. */
     glutSwapBuffers();
@@ -186,7 +233,7 @@ static void draw_elipse(float a, float b) {
 		for(i=0; i<360; i++)
 		glVertex3f(a*cos(i),
 				   b*sin(i),
-                   0
+                   0.1
                   );
 		glEnd();
 }
