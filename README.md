@@ -12,5 +12,6 @@ Opis komandi u animaciji:
 
 ### G/g - start animacije 
 ### S/s - pauzira se animacija 
+### R/r - restartuje se animacija
 ### 1/2 - menja se kamera
 ### strelice levo,desno,gore,dole se menja pocetni ugao kretanja kugle
