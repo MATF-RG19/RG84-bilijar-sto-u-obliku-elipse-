@@ -217,22 +217,25 @@ static void on_timer(int value)
     rotacija += 10;
     
     /* proverava se da li je kugla dosla do rupe */
-    if(y_curr < -0.5)
+    
+    if(y_curr < -0.1) //ukoliko je "propala" zaustavlja se animacija
         animation_ongoing = 0;
     
-    else if(x_coll < e && z_coll > 0 && x_curr+0.01 > e && z_curr-0.01 < 0) {
+    /* Ukoliko je stigla do rupe, "upada u nju" */
+    
+    else if(x_coll <= e && z_coll > 0 && x_curr+0.01 > e && z_curr-0.01 < 0) {
         y_curr -= 0.005;
     }
-    else if(x_coll < e && z_coll < 0 && x_curr+0.01 > e && z_curr+0.01 > 0){
+    else if(x_coll <= e && z_coll < 0 && x_curr+0.01 > e && z_curr+0.01 > 0){
         y_curr -= 0.005;
     }
-    else if(x_coll > e && z_coll > 0 && x_curr-0.02 < e && z_curr-0.02 < 0){
+    else if(x_coll >= e && z_coll > 0 && x_curr-0.01 < e && z_curr-0.01 < 0){
         y_curr -= 0.005;
     }
-    else if(x_coll > e && z_coll < 0 && x_curr-0.02 < e && z_curr+0.02 > 0){
+    else if(x_coll >= e && z_coll < 0 && x_curr-0.0 < e && z_curr+0.01 > 0){
         y_curr -= 0.005;
     }
-    else if(x_coll < -e && z_coll == 0 && x_curr+0.02 > e){
+    else if(x_coll <= -e && z_coll == 0 && x_curr+0.02 > e){
         y_curr -= 0.005;
     }
     else if(v_x != 0 && v_z == 0 && x_curr+0.01 > e){
@@ -485,6 +488,9 @@ static void restart() {
         x_curr = x_start;
         y_curr = 0;
         z_curr = z_start;
+        
+        x_coll = 0;
+        z_coll = 0;
     
     glutPostRedisplay();
 }
